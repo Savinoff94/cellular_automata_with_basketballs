@@ -1,8 +1,9 @@
+import { Cell, CellBuilder } from './classes.js'
+
 const color1 = '#FF7F50'
 const color2 = "#FFE4C4"
 const baseSize = 16
 const squareSize = baseSize * 12
-// const squareSize = baseSize * 3
 
 
 window.onload = function() {
@@ -10,12 +11,6 @@ window.onload = function() {
     const root = document.querySelector("#root")
     const {rows:rowsAmount, cols:colsAmount} = setGridParameters(root, squareSize)
     const gridMatrix = getGrid(root, rowsAmount, colsAmount)
-
-    // let rrr = setInterval(() => {
-        
-    //     update(gridMatrix)
-        
-    // },4000)
 
     const animateTime = 4000;
     const baseTime = Date.now();
@@ -46,24 +41,15 @@ function getGrid(root, rowsAmount, colsAmount) {
     for(let j = 0; j < rowsAmount; j++) {
         const row = []
         for(let i = 0; i < colsAmount; i++) {
-            const state = getRandomState()
-
-
-            const div = document.createElement("div")
-            div.classList.add("block")
-            div.cellState = state;
-            div.innerHTML = getSVG(squareSize);
-            div.firstElementChild.style.opacity = state ? '1' : '0'
-            // console.log(div.innerHTML)
-            // div.innerHTML.style.opacity = state ? '1' : '0'
-
-            // div.style.backgroundColor = state ? color1 : color2;
-            div.style.display = 'flex';
-            div.style.justifyContent = 'center';
-            div.style.alignItems = 'center';
-            root.appendChild(div);
-
-            row.push(div);
+            const state = getRandomState();
+            const cellBuilder = new CellBuilder();
+            const cell = cellBuilder.setSVG(getSVG(squareSize)).setState(getRandomState()).build()
+            root.appendChild(cell.getElement());
+            if(state)
+            {
+                cell.appear()
+            }
+            row.push(cell);
         } 
         grid.push(row)
     }
@@ -125,32 +111,24 @@ function update(grid) {
             }
 
             if(prevCellState) {
-                grid[rowIndex][cellIndex].cellState = (neiboursStatesSum == 2 || neiboursStatesSum == 3 ? 1 : 0)
+                grid[rowIndex][cellIndex].setState((neiboursStatesSum == 2 || neiboursStatesSum == 3) ? 1 : 0)
             }
 
             if(!prevCellState) {
-                grid[rowIndex][cellIndex].cellState = (neiboursStatesSum == 3 ? 1 : 0)
+                grid[rowIndex][cellIndex].setState((neiboursStatesSum == 3) ? 1 : 0);
 
             }
 
             const updatedCellState = grid[rowIndex][cellIndex].cellState;
 
             if(updatedCellState && !prevCellState) {
-                // grid[rowIndex][cellIndex].innerHTML = getSVG(squareSize)
-                grid[rowIndex][cellIndex].style.animation = 'ball_appear 1.5s forwards'
+                grid[rowIndex][cellIndex].appear();
             }
 
             if(!updatedCellState && prevCellState) {
-                grid[rowIndex][cellIndex].style.animation = 'ball_disappear 1.5s forwards'
-
-                // grid[rowIndex][cellIndex].innerHTML = ''
+                grid[rowIndex][cellIndex].disappear()
             }
-            // if(!updatedCellState && !prevCellState) {
-            //     grid[rowIndex][cellIndex].innerHTML = getSVG(squareSize)
-            // }
 
-            // grid[rowIndex][cellIndex].style.animation = grid[rowIndex][cellIndex].cellState ?  'ball_appear 2s' : '';
-            // grid[rowIndex][cellIndex].innerHTML = grid[rowIndex][cellIndex].cellState ?  getSVG(squareSize) : '';
         })
     })
 }
