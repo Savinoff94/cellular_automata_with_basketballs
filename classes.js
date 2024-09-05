@@ -3,9 +3,10 @@ export class Cell {
         this.element = document.createElement('div');
         this.state = 0;
         this.element.style.opacity = '0';
-        this.element.display = 'flex';
-        this.element.justifyContent = 'center';
-        this.element.alignItems = 'center';
+        this.element.style.display = 'flex';
+        this.element.style.justifyContent = 'center';
+        this.element.style.alignItems = 'center';
+        this.isAnimation = true;
     }
 
     getElement() {
@@ -54,6 +55,15 @@ export class CellBuilder {
         this.cell.element.firstElementChild.style.opacity = `${state}`;
         return this;
     }
+    setAnimationListeners() {
+        this.cell.element.addEventListener('animationstart', () => {
+            this.cell.isAnimation = true;
+        })
+        this.cell.element.addEventListener('animationend', () => {
+            this.cell.isAnimation = false;
+        })
+        return this;
+    }
 
     build() {
         return this.cell;
@@ -63,6 +73,7 @@ export class CellBuilder {
 export class Grid {
     constructor() {
         this.matrix = [];
+        this.lastChangedCell = null
     }
 
     getElement() {
@@ -127,24 +138,30 @@ export class Grid {
     
                 if(updatedCellState && !prevCellState) {
                     cell.appear();
+                    this.lastChangedCell = cell;
                 }
     
                 if(!updatedCellState && prevCellState) {
-                    cell.disappear()
+                    cell.disappear();
+                    this.lastChangedCell = cell;
                 }
             })
         })
     }
-
-    animate() {
-        try {
+    runAnimation() {
+        const animate = () => {
+            if(!this.lastChangedCell) {
+                this.updateGrid();
+            }
             
-        } catch (error) {
+            if(this.lastChangedCell && !this.lastChangedCell.isAnimation) {
+                
+                this.updateGrid();
+            }
             
-        } finally {
-            
+            requestAnimationFrame(animate);
         }
-
+        requestAnimationFrame(animate);
     }
 }
 
@@ -175,13 +192,14 @@ export class GridBuilder {
         return this;
     }
     setGridMatrix() {
+        const fragment = document.createDocumentFragment();
         for(let j = 0; j < this.rows; j++) {
             const row = []
             for(let i = 0; i < this.cols; i++) {
                 const state = getRandomState();
                 const cellBuilder = new CellBuilder();
-                const cell = cellBuilder.setSVG(getSVG(this.squareSize)).setState(getRandomState()).build()
-                root.appendChild(cell.getElement());
+                const cell = cellBuilder.setSVG(getSVG(this.squareSize)).setState(getRandomState()).setAnimationListeners().build()
+                fragment.appendChild(cell.getElement());
                 if(state)
                 {
                     cell.appear()
@@ -190,6 +208,7 @@ export class GridBuilder {
             } 
             this.grid.matrix.push(row)
         }
+        this.grid.element.appendChild(fragment);
         return this;
     }
     setElement(element) {
